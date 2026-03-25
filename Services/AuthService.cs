@@ -1,32 +1,31 @@
-using AuthApi.Data;
+using AuthApi.DTOs;
 using AuthApi.Models;
-using Microsoft.EntityFrameworkCore;
+using AuthApi.Repositories;
 
 namespace AuthApi.Services;
 
-public class AuthService(AppDbContext db, JwtService jwtService) : IAuthService
+public class AuthService(UserRepository userRepository, JwtService jwtService) : IAuthService
 {
-    public async Task<bool> RegisterAsync(RegisterRequest request)
+    public async Task<bool> RegisterAsync(RegisterDto dto)
     {
-        bool nameExists = await db.Users.AnyAsync(u => u.Name == request.Name);
+        bool nameExists = await userRepository.ExistsAsync(dto.Name);
         if (nameExists)
             return false;
 
         var user = new User
         {
-            Name = request.Name,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            RoleUser = request.RoleUser
+            Name = dto.Name,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+            RoleUser = dto.RoleUser
         };
 
-        db.Users.Add(user);
-        await db.SaveChangesAsync();
+        await userRepository.AddAsync(user);
         return true;
     }
 
     public async Task<string?> LoginAsync(string name, string password)
     {
-        var user = await db.Users.FirstOrDefaultAsync(u => u.Name == name);
+        var user = await userRepository.GetByNameAsync(name);
 
         if (user is null)
             return null;

@@ -1,17 +1,21 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using AuthApi.Configurations;
 using AuthApi.Models;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace AuthApi.Services;
 
-public class JwtService(IConfiguration config)
+public class JwtService(IOptions<JwtSettings> jwtOptions)
 {
+    private readonly JwtSettings _jwt = jwtOptions.Value;
+
     public string GenerateToken(User user)
     {
         var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(config["Jwt:Key"]!));
+            Encoding.UTF8.GetBytes(_jwt.Secret));
 
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -22,13 +26,11 @@ public class JwtService(IConfiguration config)
             new Claim(ClaimTypes.Role, user.RoleUser)
         };
 
-        var expiration = int.Parse(config["Jwt:ExpirationMinutes"]!);
-
         var token = new JwtSecurityToken(
-            issuer: config["Jwt:Issuer"],
-            audience: config["Jwt:Audience"],
+            issuer: _jwt.Issuer,
+            audience: _jwt.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(expiration),
+            expires: DateTime.UtcNow.AddMinutes(_jwt.ExpirationInMinutes),
             signingCredentials: credentials
         );
 
