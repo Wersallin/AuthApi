@@ -28,11 +28,33 @@ public class AuthController(IAuthService authService) : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        string? token = await authService.LoginAsync(dto.Name, dto.Password);
+        var result = await authService.LoginAsync(dto.Name, dto.Password);
 
-        if (token is null)
+        if (result is null)
             return Unauthorized(new { message = "Nome ou senha invalidos." });
 
-        return Ok(new { token });
+        return Ok(new
+        {
+            accessToken = result.Value.AccessToken,
+            refreshToken = result.Value.RefreshToken
+        });
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var result = await authService.RefreshAsync(dto.RefreshToken);
+
+        if (result is null)
+            return Unauthorized(new { message = "Refresh token invalido ou expirado." });
+
+        return Ok(new
+        {
+            accessToken = result.Value.AccessToken,
+            refreshToken = result.Value.RefreshToken
+        });
     }
 }
