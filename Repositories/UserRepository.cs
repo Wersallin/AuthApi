@@ -26,6 +26,11 @@ public class UserRepository(AppDbContext db)
         return await db.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
     }
 
+    public async Task<List<User>> GetAllAsync()
+    {
+        return await db.Users.ToListAsync();
+    }
+
     public async Task AddAsync(User user)
     {
         db.Users.Add(user);
@@ -36,5 +41,16 @@ public class UserRepository(AppDbContext db)
     {
         db.Users.Update(user);
         await db.SaveChangesAsync();
+    }
+
+    public async Task<bool> DeleteAsync(int id)
+    {
+        var user = await GetByIdAsync(id);
+        if (user is null)
+            return false;
+
+        db.Users.Remove(user);
+        await db.SaveChangesAsync();
+        return true;
     }
 }
