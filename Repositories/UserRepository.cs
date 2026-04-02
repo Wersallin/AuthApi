@@ -11,6 +11,11 @@ public class UserRepository(AppDbContext db)
         return await db.Users.AnyAsync(u => u.Name == name);
     }
 
+    public async Task<User?> GetByIdAsync(int id)
+    {
+        return await db.Users.FirstOrDefaultAsync(u => u.Id == id);
+    }
+
     public async Task<User?> GetByNameAsync(string name)
     {
         return await db.Users.FirstOrDefaultAsync(u => u.Name == name);

@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using AuthApi.DTOs;
 using AuthApi.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AuthApi.Controllers;
@@ -56,5 +58,23 @@ public class AuthController(IAuthService authService) : ControllerBase
             accessToken = result.Value.AccessToken,
             refreshToken = result.Value.RefreshToken
         });
+    }
+
+    [Authorize]
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userIdClaim is null)
+            return Unauthorized(new { message = "Usuario nao autenticado." });
+
+        int userId = int.Parse(userIdClaim);
+        bool success = await authService.LogoutAsync(userId);
+
+        if (!success)
+            return NotFound(new { message = "Usuario nao encontrado." });
+
+        return Ok(new { message = "Logout realizado com sucesso." });
     }
 }

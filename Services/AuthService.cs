@@ -1,4 +1,3 @@
-using AuthApi.Data;
 using AuthApi.DTOs;
 using AuthApi.Models;
 using AuthApi.Repositories;
@@ -63,5 +62,19 @@ public class AuthService(UserRepository userRepository, JwtService jwtService) :
         await userRepository.UpdateAsync(user);
 
         return (newAccessToken, newRefreshToken);
+    }
+
+    public async Task<bool> LogoutAsync(int userId)
+    {
+        var user = await userRepository.GetByIdAsync(userId);
+
+        if (user is null)
+            return false;
+
+        user.RefreshToken = null;
+        user.RefreshTokenExpiry = null;
+        await userRepository.UpdateAsync(user);
+
+        return true;
     }
 }
